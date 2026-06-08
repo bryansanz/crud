@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inventario OSTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#070F19] text-slate-100 min-h-screen">
+    
+    <header class="p-6 border-b border-slate-800 bg-[#0B1420]">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-black text-white">Inventario <span class="text-blue-500">OSTI</span></h1>
+                <p class="text-slate-400 text-xs">Gestión de activos tecnológicos</p>
+            </div>
+            <nav class="flex gap-3">
+                <a href="{{ url_for('dashboard') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📊 Dashboard</a>
+                <a href="{{ url_for('casos') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📋 Casos</a>
+                <a href="{{ url_for('logout') }}" class="bg-red-950/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs">Salir</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="p-8">
+        <form method="GET" action="{{ url_for('inventario') }}" class="flex flex-wrap gap-3 mb-6 bg-[#0B1420] p-4 rounded-xl border border-slate-800 items-end">
+            <div>
+                <label class="text-[10px] text-slate-500 uppercase">Piso</label>
+                <input type="text" name="piso" value="{{ request.args.get('piso', '') }}" placeholder="Ej: 1" class="w-full bg-black p-2 rounded border border-slate-700 text-xs">
+            </div>
+            <div>
+                <label class="text-[10px] text-slate-500 uppercase">Departamento</label>
+                <input type="text" name="departamento" value="{{ request.args.get('departamento', '') }}" placeholder="Ej: Soporte" class="w-full bg-black p-2 rounded border border-slate-700 text-xs">
+            </div>
+            <button type="submit" class="bg-blue-600 px-4 py-2 rounded font-bold text-xs h-9">Filtrar</button>
+            <a href="{{ url_for('inventario') }}" class="bg-slate-800 px-4 py-2 rounded font-bold text-xs h-9 flex items-center">Limpiar</a>
+            
+            <a href="{{ url_for('exportar_inventario', piso=request.args.get('piso'), departamento=request.args.get('departamento')) }}" 
+               class="ml-auto bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded font-bold text-xs h-9 flex items-center">📥 Exportar Excel</a>
+        </form>
+
+        <div class="bg-[#0B1420] p-5 rounded-xl border border-slate-800 shadow-xl overflow-x-auto">
+            <table class="w-full text-[10px] text-left">
+                <thead class="text-slate-500 uppercase border-b border-slate-800">
+                    <tr>
+                        <th class="p-3">Serial</th><th class="p-3">Bien Nac.</th><th class="p-3">Equipo</th>
+                        <th class="p-3">RAM/Disco</th><th class="p-3">Ubicación</th><th class="p-3">Red (IP/MAC)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in inventario %}
+                    <tr class="border-b border-slate-800/30 hover:bg-slate-800/20">
+                        <td class="p-3 font-bold text-blue-400">{{ i.serial }}</td>
+                        <td class="p-3">{{ i.bien_nacional }}</td>
+                        <td class="p-3">{{ i.nombre }}</td>
+                        <td class="p-3">{{ i.ram }} / {{ i.disco }}</td>
+                        <td class="p-3">{{ i.piso }} - {{ i.departamento }}</td>
+                        <td class="p-3">{{ i.ip }} / {{ i.mac }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <button onclick="document.getElementById('modalInv').classList.remove('hidden')" 
+            class="fixed bottom-8 right-8 bg-blue-600 w-14 h-14 rounded-full shadow-lg font-bold text-2xl hover:scale-105 transition-all">+</button>
+
+    <div id="modalInv" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4">
+        <div class="bg-[#0B1420] border border-slate-700 p-6 rounded-xl w-full max-w-lg">
+            <h3 class="font-bold text-blue-500 mb-4">Registrar Nuevo Equipo</h3>
+            <form id="formInv" action="/inventario" method="POST" class="grid grid-cols-2 gap-3 text-xs">
+                <input type="text" name="serial" id="inputSerial" placeholder="Serial (Obligatorio)" required class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="bien_nacional" placeholder="Bien Nacional" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="nombre" placeholder="Nombre/Marca (Obligatorio)" required class="bg-black p-2 rounded col-span-2 border border-slate-700">
+                <input type="text" name="modelo" placeholder="Modelo" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="ram" placeholder="RAM" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="disco" placeholder="Disco" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="piso" placeholder="Piso" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="departamento" placeholder="Departamento" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="ip" placeholder="Dirección IP" class="bg-black p-2 rounded border border-slate-700">
+                <input type="text" name="mac" placeholder="Dirección MAC" class="bg-black p-2 rounded border border-slate-700">
+                <div class="col-span-2 flex gap-2 mt-2">
+                    <button type="submit" class="flex-1 bg-blue-600 py-2 rounded font-bold">Registrar</button>
+                    <button type="button" onclick="document.getElementById('modalInv').classList.add('hidden')" class="flex-1 bg-slate-800 py-2 rounded">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const serialesExistentes = {{ inventario | map(attribute='serial') | list | tojson }};
+        document.getElementById('formInv').addEventListener('submit', function(e) {
+            const val = document.getElementById('inputSerial').value;
+            if(serialesExistentes.includes(val)) {
+                e.preventDefault();
+                alert("¡Error! El serial " + val + " ya existe en el inventario.");
+            }
+        });
+    </script>
+</body>
+</html>

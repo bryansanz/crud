@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard OSTI - Panel de Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #1e293b 100%); color: #cbd5e1; font-family: sans-serif; }
+        .panel-glass { background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.3); backdrop-filter: blur(10px); }
+        .header-gradient { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="header-gradient p-6 border-b border-blue-900">
+        <div class="container mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-black text-white uppercase">Dashboard OSTI</h1>
+                <p class="text-slate-400 text-[10px] uppercase">Usuario: {{ session['user'] }} | Rol: {{ session['rol'] }}</p>
+            </div>
+            <nav class="flex gap-2">
+                <a href="{{ url_for('dashboard') }}" class="bg-blue-900/40 border border-blue-600 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Dashboard</a>
+                <a href="{{ url_for('casos') }}" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Casos</a>
+                {% if session['rol'] == 'Administrador' %}
+                    <a href="{{ url_for('inventario') }}" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Inventario</a>
+                    <a href="{{ url_for('reportes') }}" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Reportes</a>
+                    <a href="{{ url_for('gestion_usuarios') }}" class="bg-slate-800 border border-slate-700 hover:bg-slate-700 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Usuarios</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}" class="bg-red-950/50 text-red-400 border border-red-900 px-3 py-2 rounded-lg font-bold text-[11px] uppercase">Salir</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container mx-auto p-8">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <a href="{{ url_for('inventario') }}" class="panel-glass p-6 rounded-xl hover:border-blue-500 transition-all border border-blue-900/30">
+                <h3 class="text-[10px] uppercase font-bold text-slate-500">Total Activos</h3>
+                <div class="text-4xl font-black text-white">{{ total_equipos }}</div>
+            </a>
+            <a href="{{ url_for('casos') }}" class="panel-glass p-6 rounded-xl hover:border-amber-500 transition-all border border-blue-900/30">
+                <h3 class="text-[10px] uppercase font-bold text-slate-500">En Revisión</h3>
+                <div class="text-4xl font-black text-amber-500">{{ en_revision }}</div>
+            </a>
+            <a href="{{ url_for('casos') }}" class="panel-glass p-6 rounded-xl hover:border-blue-400 transition-all border border-blue-900/30">
+                <h3 class="text-[10px] uppercase font-bold text-slate-500">Abiertos</h3>
+                <div class="text-4xl font-black text-blue-400">{{ abiertos }}</div>
+            </a>
+            <a href="{{ url_for('casos') }}" class="panel-glass p-6 rounded-xl hover:border-emerald-500 transition-all border border-blue-900/30">
+                <h3 class="text-[10px] uppercase font-bold text-slate-500">Cerrados</h3>
+                <div class="text-4xl font-black text-emerald-500">{{ cerrados }}</div>
+            </a>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="panel-glass p-6 rounded-xl border border-blue-900/30 shadow-xl h-72 flex flex-col items-center">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Distribución de Casos</h3>
+                <canvas id="miGraficoTorta"></canvas>
+            </div>
+            <div class="panel-glass p-6 rounded-xl border border-blue-900/30 shadow-xl h-72 flex flex-col items-center">
+                <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 text-center">Distribución de Inventario (Pisos)</h3>
+                <canvas id="graficoInventario"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const chartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } }
+        };
+
+        // Gráfico de Casos
+        const ctx = document.getElementById('miGraficoTorta').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Abiertos', 'Cerrados', 'En Revisión'],
+                datasets: [{
+                    data: [{{ abiertos }}, {{ cerrados }}, {{ en_revision }}],
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b'],
+                    borderWidth: 0
+                }]
+            },
+            options: chartOptions
+        });
+
+        // Gráfico de Inventario (Color morado para diferenciar)
+        const ctxInv = document.getElementById('graficoInventario').getContext('2d');
+        new Chart(ctxInv, {
+            type: 'bar',
+            data: {
+                labels: {{ data_piso.keys() | list | tojson }},
+                datasets: [{
+                    label: 'Equipos',
+                    data: {{ data_piso.values() | list | tojson }},
+                    backgroundColor: '#8b5cf6',
+                    borderRadius: 5
+                }]
+            },
+            options: { 
+                ...chartOptions,
+                scales: { y: { ticks: { color: '#94a3b8' } }, x: { ticks: { color: '#94a3b8' } } }
+            }
+        });
+    </script>
+</body>
+</html>

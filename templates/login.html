@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso al Sistema - OSTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-card {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+        .input-style {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            color: white;
+        }
+        .input-style:focus {
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card p-10 rounded-2xl w-full max-w-sm">
+    <div class="text-center mb-8">
+        <h1 class="text-white font-bold text-2xl tracking-widest uppercase">OSTI</h1>
+        <p class="text-blue-400 text-[10px] uppercase font-bold tracking-tighter mt-1">Acceso a Estación de Inteligencia</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="mb-4 p-3 rounded text-[11px] font-bold {% if category == 'error' or category == 'danger' %}bg-red-900/50 text-red-200 border border-red-700{% else %}bg-blue-900/50 text-blue-200 border border-blue-700{% endif %}" role="alert">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form action="{{ url_for('login') }}" method="POST" class="space-y-6">
+        <div>
+            <label class="text-[10px] text-slate-400 uppercase font-bold block mb-2">Usuario</label>
+            <input type="text" name="username" required autocomplete="off"
+                   class="input-style w-full p-3 rounded-lg text-sm">
+        </div>
+        
+        <div>
+            <label class="text-[10px] text-slate-400 uppercase font-bold block mb-2">Contraseña</label>
+            <input type="password" name="password" required 
+                   class="input-style w-full p-3 rounded-lg text-sm">
+        </div>
+
+        <button type="submit" 
+                class="w-full bg-blue-700 hover:bg-blue-600 text-white font-bold py-3 rounded-lg transition-all uppercase tracking-widest text-xs shadow-lg">
+            Iniciar Sesión
+        </button>
+    </form>
+
+    <div class="mt-8 text-center">
+        <p class="text-[9px] text-slate-500 uppercase tracking-widest">Sistema bajo supervisión de seguridad</p>
+    </div>
+</div>
+
+</body>
+</html>

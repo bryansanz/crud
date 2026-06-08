@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestión de Casos - Comando OSTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: linear-gradient(135deg, #020617 0%, #1e293b 100%); color: #cbd5e1; font-family: sans-serif; }
+        .panel-glass { background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(59, 130, 246, 0.3); }
+        .header-gradient { background: linear-gradient(90deg, #0f172a 0%, #1e3a8a 100%); }
+    </style>
+</head>
+<body class="min-h-screen">
+    <header class="header-gradient p-6 border-b border-blue-900">
+        <div class="flex items-center justify-between max-w-7xl mx-auto">
+            <h1 class="text-white font-bold text-xl uppercase">Sistema OSTI</h1>
+            <nav class="flex gap-3">
+                <a href="/dashboard" class="bg-blue-900/40 hover:bg-blue-800 px-4 py-2 rounded text-sm font-bold">📊 Dashboard</a>
+                <a href="/inventario" class="bg-blue-900/40 hover:bg-blue-800 px-4 py-2 rounded text-sm font-bold">📦 Inventario</a>
+                <a href="/logout" class="bg-red-900/40 text-red-400 px-4 py-2 rounded text-xs font-bold">Salir</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="p-8 max-w-7xl mx-auto">
+        <h2 class="text-lg font-bold mb-6 text-white uppercase border-l-4 border-blue-500 pl-4">Listado de Casos</h2>
+        <div class="panel-glass p-5 rounded-lg">
+            <table class="w-full text-left text-[11px]">
+                <thead class="text-blue-300 uppercase border-b border-blue-900">
+                    <tr><th class="p-3">Título</th><th class="p-3">Técnico</th><th class="p-3">Estatus</th><th class="p-3">Acción</th></tr>
+                </thead>
+                <tbody class="divide-y divide-blue-900/30">
+                    {% for c in casos %}
+                    <tr class="hover:bg-blue-900/20">
+                        <td class="p-3 text-white font-bold">{{ c.titulo }}</td>
+                        <td class="p-3 text-[9px] text-slate-400">{{ c.tecnico_asignado }}</td>
+                        <td class="p-3 font-bold text-blue-400">{{ c.estatus }}</td>
+                        <td class="p-3 flex gap-2">
+                            {% if session['rol'] in ['Administrador', 'Coordinador'] or session['user'] in c.tecnico_asignado %}
+                                <button onclick="abrirDetalle({{ c.id }})" class="bg-blue-900/40 border border-blue-600 px-2 py-1 rounded text-blue-300 hover:bg-blue-800">Gestionar</button>
+                                <button onclick="verDetalleCompleto({{ c.id }})" class="bg-slate-800 border border-slate-600 px-2 py-1 rounded text-slate-300 hover:bg-slate-700">Detalle</button>
+                                {% if c.archivo_adjunto %}
+                                <button onclick="imprimirAdjunto('{{ url_for('static', filename='uploads/' + c.archivo_adjunto) }}')" class="bg-emerald-900/40 border border-emerald-600 px-2 py-1 rounded text-emerald-300 hover:bg-emerald-800">🖨️</button>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-slate-600 italic">Solo lectura</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    {% if session['rol'] == 'Administrador' %}
+    <button onclick="document.getElementById('modalNuevo').classList.remove('hidden')" class="fixed bottom-8 right-8 bg-blue-700 w-14 h-14 rounded-full shadow-lg font-bold text-2xl hover:scale-105 transition-all">+</button>
+    {% endif %}
+
+    <div id="modalNuevo" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="panel-glass p-6 rounded-xl w-full max-w-lg">
+            <h3 class="font-bold mb-4 text-white">Registrar Nuevo Caso</h3>
+            <form action="/casos" method="POST" enctype="multipart/form-data" class="grid grid-cols-2 gap-4 text-xs text-white">
+                <input type="hidden" name="reporte_por" value="{{ session['user'] }}">
+                <div class="col-span-2"><input type="text" name="titulo" required placeholder="Título del Caso" class="w-full bg-slate-900 p-2 rounded border border-blue-700"></div>
+                <div class="col-span-2">
+                    <input list="listaEquipos" name="serial" id="serial_input" onchange="sinc(this.value)" placeholder="Buscar equipo (Serial)..." required class="w-full bg-slate-900 p-2 rounded border border-blue-700">
+                    <datalist id="listaEquipos">{% for i in inventario %}<option value="{{ i.serial }}">{{ i.nombre }} - {{ i.piso }}</option>{% endfor %}</datalist>
+                </div>
+                <input type="text" name="bien_nacional" placeholder="Bien Nacional" class="bg-slate-900 p-2 rounded border border-blue-700">
+                <input type="text" name="usuario_reporta" placeholder="Usuario que reporta" required class="bg-slate-900 p-2 rounded border border-blue-700">
+                <input type="text" name="piso" id="piso" placeholder="Piso" class="bg-slate-900 p-2 rounded border border-blue-700">
+                <input type="text" name="departamento" id="depto" placeholder="Departamento" class="bg-slate-900 p-2 rounded border border-blue-700">
+                <div class="col-span-2"><label class="text-slate-400">Adjuntar Archivo:</label><input type="file" name="archivo_adjunto" class="w-full bg-slate-900 p-2 rounded border border-blue-700"></div>
+                <div class="col-span-2">
+                    <label class="text-slate-400 block mb-2">Asignar Técnicos:</label>
+                    <div class="grid grid-cols-2 gap-2 bg-slate-900 p-3 rounded border border-blue-700">
+                        {% for t in tecnicos %}<label class="flex items-center gap-2"><input type="checkbox" name="tecnicos" value="{{ t.username }}"> {{ t.username }}</label>{% endfor %}
+                    </div>
+                </div>
+                <div class="col-span-2 flex gap-2"><button type="submit" class="flex-1 bg-blue-700 py-2 rounded font-bold">Registrar</button><button type="button" onclick="document.getElementById('modalNuevo').classList.add('hidden')" class="flex-1 bg-slate-800 py-2 rounded">Cancelar</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalDetalle" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
+        <div class="panel-glass p-6 rounded-xl w-96 text-white">
+            <h3 class="font-bold mb-4 border-b border-blue-800 pb-2">Gestionar Caso</h3>
+            <div id="reseña_caso" class="mb-4 text-xs space-y-1 text-slate-300 italic"></div>
+            {% if session['rol'] in ['Administrador', 'Coordinador'] %}
+            <form action="/casos" method="POST" class="mb-4 border-t border-blue-800 pt-3">
+                <input type="hidden" name="reasignar_id" id="reasignar_id_input">
+                <div class="flex gap-2">
+                    <select name="nuevo_tecnico" class="flex-1 bg-slate-900 p-1 rounded text-xs border border-blue-700">
+                        {% for t in tecnicos %}<option value="{{ t.username }}">{{ t.username }}</option>{% endfor %}
+                    </select>
+                    <button type="submit" class="bg-amber-700 px-2 py-1 rounded text-[10px]">Asignar</button>
+                </div>
+            </form>
+            {% endif %}
+            <form action="/casos" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="caso_id" id="caso_id_input">
+                <select name="estatus" class="w-full bg-slate-900 p-2 rounded text-xs mb-4 border border-blue-700">
+                    <option value="Abierto">Abierto</option><option value="En Revisión">En Revisión</option><option value="Cerrado">Cerrado</option>
+                </select>
+                <input type="file" name="archivo_adjunto" class="w-full mb-4 text-xs bg-slate-900 p-1 rounded">
+                <div class="flex gap-2">
+                    <button type="submit" class="flex-1 bg-blue-700 py-2 rounded text-xs">Guardar</button>
+                    <button type="button" onclick="document.getElementById('modalDetalle').classList.add('hidden')" class="flex-1 bg-slate-800 py-2 rounded text-xs">Cerrar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const inventario = {{ inventario | tojson }};
+        function sinc(serial) {
+            const eq = inventario.find(i => i.serial === serial);
+            if(eq) { document.getElementById('piso').value = eq.piso; document.getElementById('depto').value = eq.departamento; }
+        }
+        async function abrirDetalle(id) {
+            const res = await fetch(`/detalle_caso/${id}`);
+            const data = await res.json();
+            document.getElementById('caso_id_input').value = data.id;
+            document.getElementById('reasignar_id_input').value = data.id;
+            document.getElementById('reseña_caso').innerHTML = `
+                <p><strong>Registrado por:</strong> ${data.reporte_por}</p>
+                <p><strong>Usuario:</strong> ${data.usuario_reporta}</p>
+                <p><strong>Depto:</strong> ${data.departamento}</p>
+                <p><strong>Fecha:</strong> ${data.fecha_creacion}</p>`;
+            document.getElementById('modalDetalle').classList.remove('hidden');
+        }
+        async function verDetalleCompleto(id) {
+            const res = await fetch(`/detalle_caso/${id}`);
+            const data = await res.json();
+            alert(`--- DETALLE DEL CASO ---\n\nID: ${data.id}\nTítulo: ${data.titulo}\nReportado por: ${data.reporte_por}\nUsuario: ${data.usuario_reporta}\nSerial: ${data.serial}\nEstatus: ${data.estatus}`);
+        }
+        function imprimirAdjunto(url) {
+            const win = window.open(url, '_blank');
+            win.onload = () => { win.print(); };
+        }
+    </script>
+</body>
+</html>

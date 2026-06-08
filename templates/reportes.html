@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Métricas y Reportes - IT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <style>
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white; color: black; }
+            .bg-slate-900 { background: white !important; border: 1px solid #e2e8f0 !important; }
+            h1, h2 { color: black !important; }
+            table { border: 1px solid #ccc; }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white font-sans min-h-screen">
+
+    <div class="container mx-auto p-6">
+        <header class="flex justify-between items-center mb-8 border-b border-slate-800 pb-5">
+            <div>
+                <h1 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-500">
+                    Panel de Rendimiento y Reportes
+                </h1>
+                <p class="text-slate-400 text-sm">Productividad del Personal de Soporte y Volúmenes de Casos</p>
+            </div>
+            <nav class="flex gap-3 no-print">
+                <a href="{{ url_for('dashboard') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📊 Dashboard</a>
+                <a href="{{ url_for('casos') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📋 Casos</a>
+                <a href="{{ url_for('logout') }}" class="bg-red-950/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs">Salir</a>
+            </nav>
+        </header>
+
+        <form method="GET" action="{{ url_for('reportes') }}" class="flex flex-wrap gap-4 mb-8 bg-slate-900 p-4 rounded-xl border border-slate-800 no-print">
+            <input type="number" name="anio" placeholder="Año (ej: 2026)" value="{{ anio_sel or '' }}" class="bg-slate-800 p-2 rounded text-white text-sm border border-slate-700">
+            <input type="number" name="mes" placeholder="Mes (1-12)" value="{{ mes_sel or '' }}" class="bg-slate-800 p-2 rounded text-white text-sm border border-slate-700">
+            <button type="submit" class="bg-blue-600 hover:bg-blue-500 px-4 py-2 rounded text-white font-bold text-sm">Filtrar</button>
+            <a href="{{ url_for('reportes') }}" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-slate-300 text-sm">Limpiar</a>
+            
+            <div class="ml-auto flex gap-2">
+                <button type="button" onclick="window.print()" class="bg-slate-700 hover:bg-slate-600 px-4 py-2 rounded text-white font-bold text-sm">🖨️ Imprimir</button>
+                <a href="{{ url_for('exportar_reportes', anio=anio_sel, mes=mes_sel) }}" class="bg-emerald-700 hover:bg-emerald-600 px-4 py-2 rounded text-white font-bold text-sm">📥 Exportar Excel</a>
+            </div>
+        </form>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-emerald-400 flex items-center gap-2">📅 Casos por Período</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="p-3">Año</th><th class="p-3">Mes</th><th class="p-3 text-center">Registrados</th><th class="p-3 text-center">Atendidos</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/40 text-sm">
+                            {% for fila in reporte_tiempo %}
+                            <tr class="hover:bg-slate-800/25">
+                                <td class="p-3 font-mono font-bold">{{ fila[0] }}</td>
+                                <td class="p-3">{{ meses[fila[1]] if meses is defined else fila[1] }}</td>
+                                <td class="p-3 text-center text-cyan-400">{{ fila[2] }}</td>
+                                <td class="p-3 text-center"><span class="bg-emerald-950/60 px-2 py-0.5 rounded text-emerald-400 font-bold">{{ fila[3] }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="4" class="p-6 text-center text-slate-500">No hay datos para este período.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 p-6 rounded-xl border border-slate-800 shadow-xl">
+                <h2 class="text-xl font-bold mb-4 text-teal-400 flex items-center gap-2">🛠️ Rendimiento por Técnico</h2>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
+                                <th class="p-3">Técnico</th><th class="p-3 text-center">Total Asignados</th><th class="p-3 text-center">Resueltos</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800/40 text-sm">
+                            {% for fila in reporte_soporte %}
+                            <tr class="hover:bg-slate-800/25">
+                                <td class="p-3 font-semibold">👷 {{ fila[0] }}</td>
+                                <td class="p-3 text-center">{{ fila[1] }}</td>
+                                <td class="p-3 text-center"><span class="bg-teal-950/60 px-2.5 py-0.5 rounded-full text-teal-300 font-black">{{ fila[2] }} / {{ fila[1] }}</span></td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="p-6 text-center text-slate-500">No hay asignaciones.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

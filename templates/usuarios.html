@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Administración de Personal - OSTI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#070F19] text-slate-100 font-sans min-h-screen">
+
+    <header class="p-6 border-b border-slate-800 bg-[#0B1420] flex items-center justify-between">
+        <div>
+            <h1 class="text-blue-500 font-bold text-xl">SISTEMA OSTI</h1>
+            <p class="text-slate-400 text-[10px]">Control de Personal y Accesos</p>
+        </div>
+        <nav class="flex gap-3">
+            <a href="{{ url_for('dashboard') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📊 Dashboard</a>
+            <a href="{{ url_for('casos') }}" class="bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg font-bold text-sm">📋 Casos</a>
+            <a href="{{ url_for('logout') }}" class="bg-red-950/30 text-red-500 px-4 py-2 rounded-lg font-bold text-xs">Salir</a>
+        </nav>
+    </header>
+
+    <div class="container mx-auto p-8">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="bg-red-900/50 border border-red-800 text-red-200 p-4 rounded mb-6 text-xs font-bold">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="bg-[#0B1420] p-6 rounded-xl border border-slate-800 shadow-xl h-fit">
+                <h3 class="text-sm font-bold text-amber-500 uppercase mb-4 border-b border-slate-800 pb-2">🛡️ Nuevo Operador</h3>
+                <form action="{{ url_for('gestion_usuarios') }}" method="POST" class="space-y-4">
+                    <input type="hidden" name="accion" value="nuevo_usuario">
+                    <input type="text" name="usuario" required placeholder="Nombre de usuario" class="w-full bg-black border border-slate-800 rounded p-2 text-xs text-white">
+                    <input type="password" name="clave" required placeholder="Contraseña" class="w-full bg-black border border-slate-800 rounded p-2 text-xs text-white">
+                    <select name="rol" class="w-full bg-black border border-slate-800 rounded p-2 text-xs text-white">
+                        <option value="Técnico">🛠️ Técnico</option>
+                        <option value="Administrador">👑 Administrador</option>
+                        <option value="Lector">👁️ Lector</option>
+                    </select>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded text-xs font-bold uppercase transition-all">Registrar</button>
+                </form>
+            </div>
+
+            <div class="bg-[#0B1420] p-6 rounded-xl border border-slate-800 shadow-xl lg:col-span-2">
+                <h3 class="text-sm font-bold text-slate-300 uppercase mb-4">Operadores Registrados</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="text-slate-500 border-b border-slate-800">
+                                <th class="p-2">Usuario</th>
+                                <th class="p-2">Rol</th>
+                                <th class="p-2 text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for usr in usuarios %}
+                            <tr class="border-b border-slate-800/30">
+                                <td class="p-2 font-bold text-slate-200">{{ usr.username }}</td>
+                                <td class="p-2">
+                                    <form action="{{ url_for('gestion_usuarios') }}" method="POST">
+                                        <input type="hidden" name="accion" value="cambiar_rol">
+                                        <input type="hidden" name="id_usuario" value="{{ usr.id }}">
+                                        <select name="nuevo_rol" onchange="this.form.submit()" class="bg-black border border-slate-700 rounded p-1 text-[10px] text-white">
+                                            <option value="Administrador" {% if usr.rol == 'Administrador' %}selected{% endif %}>Administrador</option>
+                                            <option value="Técnico" {% if usr.rol == 'Técnico' %}selected{% endif %}>Técnico</option>
+                                            <option value="Lector" {% if usr.rol == 'Lector' %}selected{% endif %}>Lector</option>
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="p-2 text-center">
+                                    <form action="{{ url_for('gestion_usuarios') }}" method="POST" onsubmit="return confirm('¿Está seguro de eliminar a {{ usr.username }}?');">
+                                        <input type="hidden" name="accion" value="eliminar_usuario">
+                                        <input type="hidden" name="id_usuario" value="{{ usr.id }}">
+                                        <button type="submit" class="text-red-500 hover:text-red-400 font-bold text-[10px]">REMOVER</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
