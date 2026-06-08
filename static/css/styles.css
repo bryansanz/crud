@@ -1,0 +1,26 @@
+/* Microinteracciones de navegación */
+.nav-btn {
+    transition: all 0.3s ease;
+}
+.nav-btn:hover {
+    box-shadow: 0 0 15px rgba(34, 211, 238, 0.4);
+    transform: translateY(-1px);
+}
+
+/* Efecto Onda (Ripple) */
+.btn-submit {
+    position: relative;
+    overflow: hidden;
+}
+.ripple-effect {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    border-radius: 50%;
+    animation: ripples 0.6s linear;
+}
+@keyframes ripples {
+    0% { width: 0px; height: 0px; opacity: 0.5; }
+    100% { width: 500px; height: 500px; opacity: 0; }
+}
